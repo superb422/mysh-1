@@ -15,6 +15,9 @@ static struct built_in_command built_in_commands[] = {
   { "fg", do_fg, validate_fg_argv }
 };
 
+char full_path[5][50]={{"/usr/local/bin"},{"/usr/bin/"},{"/bin/"},{"/usr/sbin/"},{"/sbin/"}};
+char path_temp[50];
+int temp=0;
 static int is_built_in_command(const char* command_name)
 {
   static const int n_built_in_commands = sizeof(built_in_commands) / sizeof(built_in_commands[0]);
@@ -61,19 +64,36 @@ int evaluate_command(int n_commands, struct single_command (*commands)[512])
 	        }
 	        else
 	        {
-            if(strcmp(com->argv[com->argc-1],"&")==0){
-              printf("background program\n");
-              return 0;
-            }
-            else{
-              wait(0);
-            }
-          } 
+            		if(strcmp(com->argv[com->argc-1],"&")==0){
+              			printf("background program\n");
+              			return 0;
+            		}
+           		else{
+              			wait(0);
+            		}
+          	} 
     }
-    else 
+    else
     {
-      fprintf(stderr, "%s: command not found\n", com->argv[0]);
-      return -1;
+	pid_t pid=fork();
+	if(pid==0)
+	{
+		for(int i=0;i<5;i++)
+		{
+			strcpy(path_temp,full_path[i]);
+			strcat(path_temp,com->argv[0]);
+			execv(path_temp,com->argv);
+		}
+	}
+	else{
+		temp++;
+		wait(0);
+	}
+      if(temp==0){
+      	fprintf(stderr, "%s: command not found\n", com->argv[0]);
+      	return -1;
+	}
+      temp=0;
     }
   }
   return 0;
